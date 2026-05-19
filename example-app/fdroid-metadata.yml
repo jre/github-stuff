@@ -1,0 +1,25 @@
+# This is a template for an app's F-Droid metadata file. This should
+# be committed to the app repository, and the path passed to the
+# add-fdroid-apk.yaml shared workflow via the metadata-path input.
+
+# Reference documentation for this file is found at:
+# https://f-droid.org/docs/Build_Metadata_Reference
+
+# Note that none of the options related to updating or building the
+# app need to be set. The workflow will set CurrentVersion and
+# CurrentVersionName automatically.
+
+#Categories:
+#  - foo
+#  - bar
+AuthorName:
+#License:
+#WebSite:
+SourceCode:
+#IssueTracker:
+#Translation:
+#Changelog:
+#Donate:
+#AntiFeatures:
+#RequiresRoot:
+#ArchivePolicy:

@@ -1,0 +1,40 @@
+name: Build release APK
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.*'
+
+jobs:
+  build-release-apk:
+    uses: jre/github-stuff/.github/workflows/build-apk.yaml@v1
+    permissions:
+      contents: read
+    with:
+      gradle-task: assembleRelease
+      artifact-name: myapp-{{ github.ref_name }}.apk
+      artifact-path: app/build/outputs/apk/release/app-release.apk
+      key-alias: my-key-alias
+    secrets:
+      keystore-base64: ${{ secrets.APP_KEYSTORE_BASE64 }}
+      keystore-password: ${{ secrets.APP_KEYSTORE_PASSWORD }}
+
+  create-release:
+    uses: jre/github-stuff/.github/workflows/create-release.yaml@v1
+    needs: build-release-apk
+    permissions:
+      contents: write
+    with:
+      release-tag: ${{ github.ref_name }}
+      artifact-id: ${{ needs.build-release-apk.outputs.artifact-id }}
+      artifact-name: testapp-${{ github.ref_name }}.apk
+      artifact-days: 1
+
+  update-fdroid:
+    uses: jre/github-stuff/.github/workflows/add-fdroid-apk.yaml@v1
+    needs: build-release-apk
+    with:
+      artifact-id: ${{ needs.build-release-apk.outputs.artifact-id }}
+      metadata-path: app/fdroid-metadata.yml
+    secrets:
+      pages-token: ${{ secrets.FDROID_PAGES_TOKEN }}

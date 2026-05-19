@@ -1,0 +1,21 @@
+# {{repo.name['en-US']}}
+
+## Installing
+
+To install one of my Android apps, first install the
+[F-Droid app](https://f-droid.org/), add
+[my repository](https://my-user.github.io/fdroid/repo) and then search for
+one of the apps listed below.
+
+## Current apps
+
+| Name | Version | Updated |
+| ---- | ------- | ------- | {# -#}
+{% for package, app in apps|dictsort %}
+| [{{app.name['en-US']}}]({{app.sourceCode}}) {# -#}
+| [{{app.versionName}}]({{app.sourceCode}}/releases/tag/v{{app.versionName}}) {# -#}
+| {{app.lastUpdated|strftime_millis('%B %e %Y')}} | {# -#}
+{% endfor %}
+
+Last updated on {{repo.timestamp|strftime_millis('%B %e %Y')}}
+

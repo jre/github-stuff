@@ -1,0 +1,109 @@
+name: Update F-Droid repo and website
+
+on:
+  workflow_call:
+    inputs:
+      key-alias:
+        required: true
+        type: string
+      fdroid-config-path:
+        required: true
+        type: string
+    secrets:
+      keystore-base64:
+        required: true
+      keystore-password:
+        required: true
+
+jobs:
+  update-fdroid-site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Checkout github-stuff repo
+        uses: actions/checkout@v6
+        with:
+          repository: jre/github-stuff
+          path: stuff
+          ref: v1
+
+      - name: Checkout pages repo
+        uses: actions/checkout@v6
+        with:
+          path: page
+
+      - name: Create directories
+        run: mkdir -p page/fdroid/repo page/fdroid/metadata
+
+      - name: Write keystore file
+        uses: jre/github-stuff/actions/decode-to-file@v1
+        with:
+          data: ${{ secrets.keystore-base64 }}
+          filename: ${{ github.workspace }}/keystore.p12
+          mode: "0600"
+
+      - name: Setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.14
+          cache: pip
+          cache-dependency-path: stuff/scripts/fdroid/requirements.txt
+
+      - name: Install python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r stuff/scripts/fdroid/requirements.txt
+
+      - name: Set up F-Droid
+        env:
+          SRC_FILE: page/${{ inputs.fdroid-config-path }}
+          KEY_ALIAS: ${{ inputs.key-alias }}
+          KEY_PASS: ${{ secrets.keystore-password }}
+        run: |
+          rm -f page/fdroid/config.yml
+          python stuff/scripts/fdroid/config.py \
+              -a "${KEY_ALIAS}" -k keystore.p12 -p KEY_PASS \
+              -i "${SRC_FILE}" -o page/fdroid/config.yml
+
+      - name: Update F-Droid repo
+        working-directory: page/fdroid
+        run: fdroid update
+
+      - name: Expand template files
+        run: python stuff/scripts/fdroid/template.py -f page/fdroid page/*.jinja2
+
+      - name: Clean up unneeded files
+        working-directory: page/fdroid
+        run: rm -rf config.yml repo/status tmp
+
+      - name: Commit repo updates
+        working-directory: page
+        env:
+          MESSAGE: Regenerate templated files and F-Droid repository
+        run: |
+          for i in *.jinja2; do git add "${i%.jinja2}"; done
+          git add fdroid/metadata fdroid/repo
+          if git diff-index --cached --quiet HEAD; then
+              echo 'No changes to commit!'
+          else
+              git commit -m "$MESSAGE"
+          fi
+
+      - name: Ensure git working tree is clean
+        working-directory: page
+        shell: bash
+        run: |
+          git status
+          test -z "$(git status --porcelain)"
+
+      - name: Push changes
+        shell: bash
+        working-directory: page
+        run: |
+          if ! git push; then
+              git pull --rebase && git push
+          fi

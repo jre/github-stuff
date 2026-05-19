@@ -1,0 +1,88 @@
+name: Build APK
+
+on:
+  workflow_call:
+    inputs:
+      jdk-version:
+        default: 17
+        type: number
+      gradle-task:
+        required: true
+        type: string
+      artifact-name:
+        required: true
+        type: string
+      artifact-path:
+        required: true
+        type: string
+      artifact-days:
+        default: 90
+        type: number
+      key-alias:
+        required: true
+        type: string
+    outputs:
+      artifact-id:
+        value: ${{ jobs.build-apk.outputs.artifact-id }}
+    secrets:
+      keystore-base64:
+        required: true
+      keystore-password:
+        required: true
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Write keystore file
+        uses: jre/github-stuff/actions/decode-to-file@v1
+        with:
+          data: ${{ secrets.keystore-base64 }}
+          filename: ${{ github.workspace }}/keystore.jks
+          mode: "0600"
+
+      - name: Write keystore configuration file
+        env:
+          OUTFILE: ${{ github.workspace }}/keystore.properties
+          STOREFILE: ${{ github.workspace }}/keystore.jks
+          STOREPASS: ${{ secrets.keystore-password }}
+          KEYALIAS: ${{ inputs.key-alias }}
+        run: |
+          cat <<EOF > "$OUTFILE"
+          storeFile=$STOREFILE
+          storePassword=$STOREPASS
+          keyPassword=$STOREPASS
+          keyAlias=$KEYALIAS
+          EOF
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.jdk-version }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Build app
+        run: gradle ${{ inputs.gradle-task }}
+
+      - name: Rename apk file
+        env:
+          SRCFILE: ${{ inputs.artifact-path }}
+          DESTFILE: ${{ inputs.artifact-name }}
+        run: cp "$SRCFILE" "$RUNNER_TEMP/$DESTFILE"
+
+      - name: Upload apk artifact
+        id: upload
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ runner.temp }}/${{ inputs.artifact-name }}
+          if-no-files-found: error
+          archive: false
+          retention-days: ${{ inputs.artifact-days }}

@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+  <head>
+    <title>My F-Droid Repository</title>
+  </head>
+  <body>
+
+    <p>
+      To install one of my Android apps, first install the
+      <a href="https://f-droid.org/">F-Droid app</a>, add
+      <a href="fdroid/repo">my repository</a> and then search for one
+      of the apps listed below:
+    </p>
+
+    <table>
+      <thead>
+	<tr>
+	  <th scope="col">Name</th>
+	  <th scope="col">Version</th>
+	  <th scope="col">Updated</th>
+	</tr>
+      </thead>
+      <tbody>
+	{% for package, app in apps|dictsort %}
+	<tr>
+	  <td>
+	    <a href="{{ app.sourceCode }}">{{ app.name['en-US'] }}</a>
+	  </td>
+	  <td>
+	    <a href="{{ app.sourceCode }}/releases/tag/v{{ app.versionName }}">
+	      {{ app.versionName }}
+	    </a>
+	  </td>
+	  <td>
+	    {{ app.lastUpdated|strftime_millis('%B %e %Y')}}
+	  </td>
+	</tr>
+	{% endfor %}
+      </tbody>
+    </table>
+
+    <p>
+      Last updated on {{ repo.timestamp|strftime_millis('%B %e %Y') }}
+    </p>
+
+  </body>
+</html>

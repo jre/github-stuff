@@ -1,0 +1,107 @@
+name: Add FDroid APK
+
+on:
+  workflow_call:
+    inputs:
+      pages-repository:
+        default: ${{ github.repository_owner }}/${{ github.repository_owner }}.github.io
+        type: string
+      artifact-id:
+        required: true
+        type: string
+      metadata-path:
+        required: true
+        type: string
+    secrets:
+      pages-token:
+        required: true
+
+jobs:
+  add-fdroid-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Checkout app repo
+        uses: actions/checkout@v6
+        with:
+          path: app
+
+      - name: Checkout pages repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.pages-repository }}
+          token: ${{ secrets.pages-token }}
+          path: page
+
+      - name: Install system packages
+        run: |
+          sudo apt update
+          sudo apt install -y aapt
+
+      - name: Create directories
+        run: mkdir -p artifact page/fdroid/repo page/fdroid/metadata
+
+      - name: Download apk artifact
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ inputs.artifact-id }}
+          path: artifact
+          skip-decompress: true
+
+      - name: Read apk metadata
+        id: apk
+        shell: bash
+        run: |
+          aapt dump badging artifact/* | \
+              sed -n 's/package: *//p' | \
+              tr ' ' '\n' | tr -d "'" >> "$GITHUB_OUTPUT"
+
+      - name: Rename apk
+        env:
+          FULL_NAME: ${{ steps.apk.outputs.name }}
+          VERSION_CODE: ${{ steps.apk.outputs.versionCode }}
+        run: mv artifact/* "page/fdroid/repo/${FULL_NAME}_${VERSION_CODE}.apk"
+
+      - name: Update fdroid metadata
+        env:
+          SRC_FILE: app/${{ inputs.metadata-path }}
+          FULL_NAME: ${{ steps.apk.outputs.name }}
+          VERSION_CODE: ${{ steps.apk.outputs.versionCode }}
+          VERSION_NAME: ${{ steps.apk.outputs.versionName }}
+        run: |
+          rm -f "page/fdroid/metadata/${FULL_NAME}.yml"
+          sed -E -e '/^CurrentVersion(Code)?:/Id' \
+              -e "\$aCurrentVersion: '${VERSION_NAME}'" \
+              -e "\$aCurrentVersionCode: '${VERSION_CODE}'" \
+              < "${SRC_FILE}" > "page/fdroid/metadata/${FULL_NAME}.yml"
+
+      - name: Commit changes
+        working-directory: page
+        env:
+          MESSAGE: Update ${{ steps.apk.outputs.name }} to ${{ steps.apk.outputs.versionName }}
+        run: |
+          git add fdroid/repo fdroid/metadata
+          if git diff-index --cached --quiet HEAD; then
+              echo 'No changes to commit!'
+          else
+              git commit -m "$MESSAGE"
+          fi
+
+      - name: Ensure git working tree is clean
+        working-directory: page
+        shell: bash
+        run: |
+          git status
+          test -z "$(git status --porcelain)"
+
+      - name: Push changes
+        shell: bash
+        working-directory: page
+        run: |
+          if ! git push; then
+              git pull --rebase && git push
+          fi

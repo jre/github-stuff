@@ -1,0 +1,32 @@
+name: Create a release
+
+on:
+  workflow_call:
+    inputs:
+      release-tag:
+        required: true
+        type: string
+      artifact-id:
+        required: true
+        type: string
+      artifact-name:
+        required: true
+        type: string
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ inputs.artifact-id }}
+          skip-decompress: true
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.release-tag }}
+          ARTIFACT: ${{ inputs.artifact-name }}
+        run: gh release create "$TAG" --generate-notes "$ARTIFACT"

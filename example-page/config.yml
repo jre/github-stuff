@@ -1,0 +1,20 @@
+# This is a template for the fdroid server tools config.yml file. This
+# should be committed to the pages repository, and the path passed to
+# the update-fdroid-site.yaml shared workflow via the
+# fdroid-config-path input.
+
+# Reference documentation for this file is found at:
+# https://gitlab.com/fdroid/fdroidserver/-/blob/master/examples/config.yml
+
+# The repo_keyalias, keystorepass, keypass and keydname options will
+# be added automatically by the workflow.
+
+# Any options related to build apps or syncing to a remote repository
+# are not needed. An archive repository is not supported. Some
+# features which create additional files or directories will break the
+# workflow unless it is updated to handle them. Eg: per_app_repos
+
+#repo_url: https://my-user.github.io/fdroid/repo
+#repo_name:
+#repo_description: >-
+#  blah blah blah

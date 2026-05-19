@@ -1,0 +1,20 @@
+name: Build debug APK
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-debug-apk:
+    uses: jre/github-stuff/.github/workflows/build-apk.yaml@v1
+    permissions:
+      contents: read
+    with:
+      gradle-task: assembleDebug
+      artifact-name: myapp-debug-${{ github.sha }}.apk
+      artifact-path: app/build/outputs/apk/debug/app-debug.apk
+      key-alias: my-key-alias
+    secrets:
+      keystore-base64: ${{ secrets.APP_KEYSTORE_BASE64 }}
+      keystore-password: ${{ secrets.APP_KEYSTORE_PASSWORD }}

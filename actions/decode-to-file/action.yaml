@@ -1,0 +1,20 @@
+name: Decode to file
+description: Decodes data and writes to a file
+
+inputs:
+  data:
+    description: Encoded data
+    required: true
+  encoding:
+    description: Encoding method for node Buffer.from()
+    default: base64
+  filename:
+    description: Path of file to write decoded data
+    required: true
+  mode:
+    description: File mode as a string, will be modified by umask
+    default: "0666"
+
+runs:
+  using: node24
+  main: dist/index.js

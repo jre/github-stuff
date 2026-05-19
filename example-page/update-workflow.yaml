@@ -1,0 +1,18 @@
+name: Update F-Droid repository
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-site:
+    uses: jre/github-stuff/.github/workflows/update-fdroid-site.yaml@v1
+    permissions:
+      contents: write
+    with:
+      key-alias: my-key-alias
+      fdroid-config-path: config.yml
+    secrets:
+      keystore-base64: ${{ secrets.FDROID_KEYSTORE_BASE64 }}
+      keystore-password: ${{ secrets.FDROID_KEYSTORE_PASSWORD }}
