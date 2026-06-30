@@ -1,4 +1,4 @@
-# Github workflow and actions
+# Github workflows and actions
 
 This repository contains github actions and reusable workflows to
 automatically rebuild Android apps and add them to an F-Droid

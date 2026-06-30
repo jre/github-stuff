@@ -14,7 +14,7 @@ Use the same password for the keystore and the key itself.
 
 Navigate to your app repository Settings -> Secrets and variables ->
 Actions. Add a secret named APP_KEYSTORE_PASSWORD containing the
-password for they keystore.
+password for the keystore.
 
 Encode the keystore using base64 add it as a secret named APP_KEYSTORE_BASE64:
 ```
