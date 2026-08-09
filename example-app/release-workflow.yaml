@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-release-apk:
-    uses: jre/github-stuff/.github/workflows/build-apk.yaml@v1
+    uses: jre/github-stuff/.github/workflows/build-apk.yaml@v2
     permissions:
       contents: read
     with:
