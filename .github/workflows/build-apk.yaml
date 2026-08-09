@@ -70,7 +70,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Build app
-        run: gradle ${{ inputs.gradle-task }}
+        run: ./gradlew ${{ inputs.gradle-task }}
 
       - name: Rename apk file
         env:
