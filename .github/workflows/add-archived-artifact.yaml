@@ -1,0 +1,97 @@
+name: Add an artifact for a specific repository revision
+
+concurrency:
+  group: ${{ inputs.pages-repository }}
+  cancel-in-progress: false
+  queue: max
+
+on:
+  workflow_call:
+    inputs:
+      pages-repository:
+        default: ${{ github.repository_owner }}/${{ github.repository_owner }}.github.io
+        type: string
+      base-directory:
+        required: true
+        type: string
+      base-url:
+        required: true
+        type: string
+      artifact-id:
+        required: true
+        type: string
+      artifact-name:
+        required: true
+        type: string
+      redirect-template:
+        required: true
+        type: string
+    secrets:
+      pages-token:
+        required: true
+
+jobs:
+  add-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Checkout pages repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.pages-repository }}
+          token: ${{ secrets.pages-token }}
+
+      - name: Create directories
+        env:
+          DIR: ${{ inputs.base-directory }}
+        run: mkdir -p "$DIR/${GITHUB_SHA}" "$DIR/latest"
+
+      - name: Download apk artifact
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ inputs.artifact-id }}
+          path: ${{ inputs.base-directory }}/${{ github.sha }}
+          skip-decompress: true
+
+      - name: Update history
+        env:
+          ARTI: ${{ inputs.artifact-name }}
+        working-directory: ${{ inputs.base-directory }}
+        run: echo "${GITHUB_SHA} ${ARTI}" >> "history.txt"
+
+      - name: Create redirect
+        uses: jre/github-stuff/actions/update-redirect@v2
+        with:
+          template-file: ${{ inputs.redirect-template }}
+          output-file: ${{ inputs.base-directory }}/latest/${{ inputs.artifact-name }}.html
+          redirect-url: ${{ inputs.base-url }}/${{ github.sha }}/${{ inputs.artifact-name }}
+
+      - name: Commit changes
+        env:
+          MESSAGE: Add ${{ inputs.artifact-name }} for ${{ github.sha }}
+          ARTI: ${{ inputs.artifact-name }}
+        working-directory: ${{ inputs.base-directory }}
+        run: |
+          git add "${GITHUB_SHA}/${ARTI}" "latest/${ARTI}.html" history.txt
+          if git diff-index --cached --quiet HEAD; then
+              echo 'No changes to commit!'
+          else
+              git commit -m "$MESSAGE"
+          fi
+
+      - name: Ensure git working tree is clean
+        shell: bash
+        run: |
+          git status
+          test -z "$(git status --porcelain)"
+
+      - name: Push changes
+        shell: bash
+        run: |
+          if ! git push; then
+              git pull --rebase && git push
+          fi
