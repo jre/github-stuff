@@ -1,0 +1,17 @@
+name: Update redirect
+description: Updates an html redirect page from a nunjucks template
+
+inputs:
+  template-file:
+    description: Path of template file to use as input
+    required: true
+  output-file:
+    description: Path of output file to write generated data to
+    required: true
+  redirect-url:
+    description: URL to redirect to
+    required: true
+
+runs:
+  using: node24
+  main: dist/index.js

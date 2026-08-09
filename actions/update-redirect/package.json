@@ -1,0 +1,22 @@
+{
+  "name": "update-redirect",
+  "version": "0.0.1",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Joshua Elsasser <josh@elsasser.org>",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@actions/core": "^3.0.1",
+    "nunjucks": "^3.2.4"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "rollup": "^4.60.4"
+  }
+}
